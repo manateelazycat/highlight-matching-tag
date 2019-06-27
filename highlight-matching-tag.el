@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2019, Andy Stewart, all rights reserved.
 ;; Created: 2019-03-14 22:14:00
-;; Version: 0.1
-;; Last-Updated: 2019-06-27 23:13:10
+;; Version: 0.2
+;; Last-Updated: 2019-06-28 07:48:56
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/highlight-matching-tag.el
 ;; Keywords:
@@ -65,6 +65,9 @@
 
 ;;; Change log:
 ;;
+;; 2019/06/28
+;;      * Unmark tag overlay when cursor under comment.
+;;
 ;; 2019/06/27
 ;;      * First released.
 ;;
@@ -99,12 +102,15 @@
       (set (make-local-variable 'highlight-matching-tag-cursor-position) -1))
 
     (unless (equal (point) 'highlight-matching-tag-cursor-position)
-      (cond ((highlight-matching-tag-in-open-tag-p)
-             (highlight-matching-tag-mark))
-            ((highlight-matching-tag-in-close-tag-p)
-             (highlight-matching-tag-mark))
-            (t
-             (highlight-matching-tag-unmark))))
+      (cond
+       ((highlight-matching-tag-in-comment-p)
+        (highlight-matching-tag-unmark))
+       ((highlight-matching-tag-in-open-tag-p)
+        (highlight-matching-tag-mark))
+       ((highlight-matching-tag-in-close-tag-p)
+        (highlight-matching-tag-mark))
+       (t
+        (highlight-matching-tag-unmark))))
 
     (set (make-local-variable 'highlight-matching-tag-cursor-position) (point))))
 
@@ -224,6 +230,17 @@
                 (point)))
         (list close-tag-start-pos close-tag-end-pos)
         ))))
+
+(defun highlight-matching-tag-current-parse-state ()
+  (let ((point (point)))
+    (beginning-of-defun)
+    (parse-partial-sexp (point) point)))
+
+(defun highlight-matching-tag-in-comment-p (&optional state)
+  (save-excursion
+    (or (nth 4 (or state (highlight-matching-tag-current-parse-state)))
+        (eq (get-text-property (point) 'face) 'font-lock-comment-face)
+        (eq (get-text-property (point) 'face) 'web-mode-comment-face))))
 
 (provide 'highlight-matching-tag)
 
