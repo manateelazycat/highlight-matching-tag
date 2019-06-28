@@ -6,8 +6,8 @@
 ;; Maintainer: Andy Stewart <lazycat.manatee@gmail.com>
 ;; Copyright (C) 2019, Andy Stewart, all rights reserved.
 ;; Created: 2019-03-14 22:14:00
-;; Version: 0.2
-;; Last-Updated: 2019-06-28 07:48:56
+;; Version: 0.3
+;; Last-Updated: 2019-06-28 19:46:30
 ;;           By: Andy Stewart
 ;; URL: http://www.emacswiki.org/emacs/download/highlight-matching-tag.el
 ;; Keywords:
@@ -67,6 +67,7 @@
 ;;
 ;; 2019/06/28
 ;;      * Unmark tag overlay when cursor under comment.
+;;      * Fix error of `highlight-matching-tag-get-close-tag-bound'
 ;;
 ;; 2019/06/27
 ;;      * First released.
@@ -199,37 +200,38 @@
       nil)))
 
 (defun highlight-matching-tag-get-close-tag-bound ()
-  (save-excursion
-    (let (open-tag-start-pos
-          close-tag-start-pos
-          close-tag-end-pos)
-      ;; Move cursor to open tab beginning point.
-      (web-mode-element-beginning)
-      ;; Record beginning point.
-      (setq open-tag-start-pos (point))
-      ;; Jump to end tag.
-      (cond ((looking-at "<>")
-             (web-mode-tag-match))
-            (t
-             (sgml-skip-tag-forward 1)))
-      (search-backward-regexp "</")
+  (ignore-errors
+    (save-excursion
+      (let (open-tag-start-pos
+            close-tag-start-pos
+            close-tag-end-pos)
+        ;; Move cursor to open tab beginning point.
+        (web-mode-element-beginning)
+        ;; Record beginning point.
+        (setq open-tag-start-pos (point))
+        ;; Jump to end tag.
+        (cond ((looking-at "<>")
+               (web-mode-tag-match))
+              (t
+               (sgml-skip-tag-forward 1)))
+        (search-backward-regexp "</")
 
-      (if (<= (point) open-tag-start-pos)
-          ;; Return nil if end tag point small than start tag beginning point.
-          nil
-        ;; Otherwise return close tag bound.
-        (setq close-tag-start-pos
-              (save-excursion
-                (forward-char 2)
-                (point)))
-        (setq close-tag-end-pos
-              (save-excursion
-                (goto-char close-tag-start-pos)
-                (unless (looking-at ">")
-                  (forward-symbol 1))
-                (point)))
-        (list close-tag-start-pos close-tag-end-pos)
-        ))))
+        (if (<= (point) open-tag-start-pos)
+            ;; Return nil if end tag point small than start tag beginning point.
+            nil
+          ;; Otherwise return close tag bound.
+          (setq close-tag-start-pos
+                (save-excursion
+                  (forward-char 2)
+                  (point)))
+          (setq close-tag-end-pos
+                (save-excursion
+                  (goto-char close-tag-start-pos)
+                  (unless (looking-at ">")
+                    (forward-symbol 1))
+                  (point)))
+          (list close-tag-start-pos close-tag-end-pos)
+          )))))
 
 (defun highlight-matching-tag-current-parse-state ()
   (let ((point (point)))
